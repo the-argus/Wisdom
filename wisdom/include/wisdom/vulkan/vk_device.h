@@ -11,6 +11,7 @@
 #include <wisdom/vulkan/vk_render_pass.h>
 #include <wisdom/vulkan/vk_state_builder.h>
 #include <wisdom/vulkan/vk_root_signature.h>
+#include <wisdom/vulkan/vk_descriptor_heap.h>
 #include <wisdom/util/log_layer.h>
 #include <wisdom/util/misc.h>
 #include <wisdom/global/definitions.h>
@@ -240,6 +241,40 @@ WIS_EXPORT namespace wis
 			DataFormat vrs_format = DataFormat::unknown)const;
 
 		[[nodiscard]]
+		vk::UniqueDescriptorSetLayout CreateDescriptorSetLayout(uint32_t binding, uint32_t count = 1u)const
+		{
+			vk::DescriptorSetLayoutBinding layout_binding{
+				binding, vk::DescriptorType::eUniformBufferDynamic, count,
+					vk::ShaderStageFlagBits::eVertex, nullptr
+			};
+
+			vk::DescriptorSetLayoutCreateInfo desc{
+				{}, 1u, &layout_binding
+			};
+			return device->createDescriptorSetLayoutUnique(desc);
+		}
+
+		void WriteConstantBufferView(VKDescriptorSet set, VKBufferView buffer, uint32_t size)const
+		{
+			//vk::WriteDescriptorSet desc{
+			//	set, 
+			//};
+			//VkWriteDescriptorSet writeDescriptorSet = {};
+			//
+			//// Write the descriptor of the uniform buffer.
+			//// We need to pass the descriptor set where it is store and 
+			//// the binding point associated with descriptor in the descriptor set.
+			//writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			//writeDescriptorSet.dstSet = m_sampleParams.DescriptorSet.Handle;
+			//writeDescriptorSet.descriptorCount = 1;
+			//writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			//writeDescriptorSet.pBufferInfo = &m_sampleParams.HostVisibleBuffer.Descriptor;
+			//writeDescriptorSet.dstBinding = 0;
+			//
+			//vkUpdateDescriptorSets(m_vulkanParams.Device, 1, &writeDescriptorSet, 0, nullptr);
+		}
+
+		[[nodiscard]]
 		VKRootSignature CreateRootSignature()const
 		{
 			vk::PipelineLayoutCreateInfo pipeline_layout_info
@@ -269,6 +304,20 @@ WIS_EXPORT namespace wis
 		/// @param range Select the subresource range to create the view for
 		/// @return View object
 		[[nodiscard]] WIS_INLINE  VKRenderTargetView CreateRenderTargetView(VKTextureView texture, RenderSelector range = {})const;
+
+		//TODO:Comment
+		[[nodiscard]] VKDescriptorHeap CreateDescriptorHeap(uint32_t num_descs)const
+		{
+			//TODO: other types
+			vk::DescriptorPoolSize size_desc{
+				vk::DescriptorType::eUniformBufferDynamic, num_descs
+			};
+			vk::DescriptorPoolCreateInfo pool_desc{
+				vk::DescriptorPoolCreateFlags{}, num_descs, 1u, & size_desc
+			};
+			wis::shared_handle pool{device->createDescriptorPool(pool_desc), device};
+			return VKDescriptorHeap{ std::move(pool) };
+		}
 
 	private:
 		WIS_INLINE void GetQueueFamilies(VKAdapterView adapter)noexcept;
