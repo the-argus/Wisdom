@@ -310,7 +310,7 @@ WIS_EXPORT namespace wis
 		{
 			//TODO: other types
 			vk::DescriptorPoolSize size_desc{
-				vk::DescriptorType::eUniformBufferDynamic, num_descs
+				vk::DescriptorType::eMutableEXT, num_descs
 			};
 			vk::DescriptorPoolCreateInfo pool_desc{
 				vk::DescriptorPoolCreateFlags{}, num_descs, 1u, & size_desc
