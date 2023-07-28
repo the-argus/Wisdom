@@ -60,12 +60,14 @@ Test::App::App(uint32_t width, uint32_t height)
                                            aiProcess_JoinIdenticalVertices |
                                            aiProcess_SortByPType);
 
-    if (face == nullptr || face->HasMeshes() || face->HasMaterials()) {
-        wis::lib_log(wis::Severity::error, wis::format("failed to import model: {}", face_file));
+    if (face == nullptr) {
+        std::cerr << wis::format("failed to import model: {}", face_file)) << std::endl;
         std::abort();
     }
+    assert(face->HasMeshes());
+    assert(face->HasMaterials());
 
-    wis::lib_log(wis::Severity::info, wis::format("Loaded model {}", face->mMeshes[0]->mName.C_Str()));
+    std::cout << wis::format("Loaded model {}", face->mMeshes[0]->mName.C_Str()) << std::endl;
 
     factory.emplace(app_info);
 
