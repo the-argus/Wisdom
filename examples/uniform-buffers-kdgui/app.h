@@ -27,6 +27,8 @@ private:
     wis::CommandQueue queue;
     wis::SwapChain swap;
 
+    wis::DescriptorHeap uniforms;
+
     wis::CommandList context;
     wis::Fence fence;
     wis::ResourceAllocator allocator;

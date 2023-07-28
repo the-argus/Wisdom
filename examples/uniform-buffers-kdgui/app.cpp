@@ -1,4 +1,7 @@
 #include "app.h"
+#include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -16,6 +19,8 @@ constexpr wis::ApplicationInfo app_info{
     .application_name = "example",
     .engine_name = "none",
 };
+
+constexpr auto face_file = LOCAL_RESOURCE_DIR "/face/faceWIP.obj";
 
 // not WinRT Compatible
 template<class ShaderTy>
@@ -45,6 +50,22 @@ Test::App::App(uint32_t width, uint32_t height)
     : wnd(app.createWindow(width, height))
 {
     wis::LibLogger::SetLogLayer(std::make_shared<LogProvider>());
+
+    Assimp::Importer asset_importer;
+    const aiScene *face;
+    // TODO: add aiProcess_ConvertToLeftHanded flag for directX
+    face = asset_importer.ReadFile(face_file,
+                                   aiProcess_CalcTangentSpace |
+                                           aiProcess_Triangulate |
+                                           aiProcess_JoinIdenticalVertices |
+                                           aiProcess_SortByPType);
+
+    if (face == nullptr || face->HasMeshes() || face->HasMaterials()) {
+        wis::lib_log(wis::Severity::error, wis::format("failed to import model: {}", face_file));
+        std::abort();
+    }
+
+    wis::lib_log(wis::Severity::info, wis::format("Loaded model {}", face->mMeshes[0]->mName.C_Str()));
 
     factory.emplace(app_info);
 
@@ -131,6 +152,9 @@ Test::App::App(uint32_t width, uint32_t height)
         if (swap.StereoSupported())
             rtvs2[i] = device.CreateRenderTargetView(x[i], { .base_layer = 1 });
     }
+
+    uniforms = device.CreateDescriptorHeap(1u);
+    device.CreateDescriptorSetLayout(0);
 }
 Test::App::~App()
 {
