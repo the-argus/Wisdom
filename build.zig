@@ -90,10 +90,10 @@ pub fn build(b: *std.Build) !void {
             .linux, .macos => break :block .Vulkan,
             else => break :block .Vulkan,
         }
-        break :block .DX;
+        break :block .Vulkan;
     };
 
-    {
+    if (!header_only) {
         // create the static library target
         const lib = b.addStaticLibrary(.{
             .name = app_name,
@@ -158,30 +158,48 @@ pub fn build(b: *std.Build) !void {
             .Vulkan => "wisdom/src/wisdom/vulkan.cpp",
             .DX => "wisdom/src/wisdom/dx12.cpp",
         } }, flags.items);
-    }
 
-    for (targets.items) |t| {
-        t.linkLibC();
-        t.linkLibCpp();
-
-        // link libraries from build.zig.zon
-        switch (backend) {
-            .Vulkan => {
-                const dep = b.dependency("vulkan_memory_allocator", .{
-                    .target = target,
-                    .optimize = mode,
-                });
-                t.linkLibrary(dep.artifact("VulkanMemoryAllocator"));
-            },
-            .DX => {
-                t.linkSystemLibrary("WinRT");
-                t.linkSystemLibrary("DX12Agility");
-                t.linkSystemLibrary("DX12Allocator");
-                t.linkSystemLibrary("d3d12");
-                t.linkSystemLibrary("d3d11");
-                t.linkSystemLibrary("DXGI");
-                t.linkSystemLibrary("DXGUID");
-            },
+        // we only need to link libraries when building the static lib, not
+        // header-only
+        // TODO: vulkan memory allocator and etc should have their headers
+        // installed into the out, if we're building header-only. maybe for
+        // static lib as well? people might want to access the impl
+        for (targets.items) |t| {
+            // link libraries from build.zig.zon
+            switch (backend) {
+                .Vulkan => {
+                    const dep = b.dependency("vulkan_memory_allocator", .{
+                        .target = target,
+                        .optimize = mode,
+                    });
+                    var artifact = dep.artifact("VulkanMemoryAllocator");
+                    const vulkan_sdk = std.process.getEnvVarOwned(b.allocator, "VULKAN_SDK") catch |err| switch (err) {
+                        error.OutOfMemory => @panic("OOM"),
+                        error.InvalidUtf8 => @panic("VULKAN_SDK invalid environment var name"),
+                        error.EnvironmentVariableNotFound => @panic("You have no set the VULKAN_SDK environment variable- usually this means you haven't installed it."),
+                    };
+                    artifact.addLibraryPath(.{ .path = vulkan_sdk });
+                    t.linkLibrary(artifact);
+                },
+                .DX => {
+                    t.linkSystemLibrary("WinRT");
+                    t.linkSystemLibrary("DX12Agility");
+                    t.linkSystemLibrary("DX12Allocator");
+                    t.linkSystemLibrary("d3d12");
+                    t.linkSystemLibrary("d3d11");
+                    t.linkSystemLibrary("DXGI");
+                    t.linkSystemLibrary("DXGUID");
+                },
+            }
+        }
+    } else {
+        // header-only
+        const headers = switch (backend) {
+            .DX => dx_headers,
+            .Vulkan => vulkan_headers,
+        };
+        for (headers) |h| {
+            b.installFile(h, std.fs.path.join(b.allocator, &.{ "include", "wisdom", std.fs.path.basename(h) }) catch @panic("OOM"));
         }
     }
 
