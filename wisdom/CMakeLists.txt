@@ -107,7 +107,7 @@ endif()
 if (APPLE)
     target_compile_definitions(${PROJECT_NAME} PUBLIC WISDOM_MAC VK_USE_PLATFORM_METAL_EXT)
 elseif (UNIX AND NOT APPLE)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC WISDOM_LINUX VK_USE_PLATFORM_XCB_KHR)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC WISDOM_LINUX VK_USE_PLATFORM_XCB_KHR VK_USE_PLATFORM_WAYLAND_KHR)
 endif ()
 
 if(WISDOM_USE_FMT)
