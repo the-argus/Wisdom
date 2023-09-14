@@ -190,6 +190,13 @@ pub fn build(b: *std.Build) !void {
                     t.addIncludePath(.{
                         .path = std.fs.path.join(b.allocator, &.{ fmt.builder.install_path, "include" }) catch @panic("OOM"),
                     });
+
+                    switch (target.getOsTag()) {
+                        .linux => {
+                            t.linkSystemLibrary("xcb");
+                        },
+                        else => {},
+                    }
                 },
                 .DX => {
                     t.linkSystemLibrary("WinRT");

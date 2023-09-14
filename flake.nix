@@ -27,6 +27,7 @@
       devShell = pkgs.mkShell {
         packages = with pkgs; [
           zig_0_11
+          xorg.libxcb
           vulkan-sdk
         ];
         shellHook = ''
