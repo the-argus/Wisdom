@@ -11,5 +11,9 @@
             .url = "https://github.com/the-argus/VulkanMemoryAllocator/archive/c29cc46c4e7041f47e9a57685f2b56a6f22be756.tar.gz",
             .hash = "1220fb00b9ca97760960efec09b980e38bba5a8dddcb5525143b1032734769152512",
         },
+        .fmt = .{
+            .url = "https://github.com/the-argus/fmt/archive/6943e150b4c9fe5b033203dabbc60668e6122a2c.tar.gz",
+            .hash = "122014221f044a21045103dec0254a60c8edd3c3e3cef3fed359ca072ce0cf05252a",
+        },
     }
 }

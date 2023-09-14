@@ -124,9 +124,14 @@ pub fn build(b: *std.Build) !void {
         // header only defines
         if (header_only) {
             flags.appendSlice(&.{
-                "-DWISDOM_HEADER_ONLY", "-DWIS_EXPORT=", "WIS_INLINE=inline",
+                "-DWISDOM_HEADER_ONLY", "WIS_INLINE=inline",
             }) catch @panic("OOM");
         }
+
+        // the only time this is "export" is when we're doing modules which uh.
+        // aren't going to be a thing soon
+        flags.appendSlice(&.{"-DWIS_EXPORT="}) catch @panic("OOM");
+        flags.appendSlice(&.{"-DWISDOM_USE_FMT"}) catch @panic("OOM");
 
         if (force_vulkan) {
             flags.appendSlice(&.{"-DWISDOM_FORCE_VULKAN"}) catch @panic("OOM");
@@ -168,11 +173,11 @@ pub fn build(b: *std.Build) !void {
             // link libraries from build.zig.zon
             switch (backend) {
                 .Vulkan => {
-                    const dep = b.dependency("vulkan_memory_allocator", .{
+                    const vma = b.dependency("vulkan_memory_allocator", .{
                         .target = target,
                         .optimize = mode,
                     });
-                    var artifact = dep.artifact("VulkanMemoryAllocator");
+                    var artifact = vma.artifact("VulkanMemoryAllocator");
                     const vulkan_sdk = std.process.getEnvVarOwned(b.allocator, "VULKAN_SDK") catch |err| switch (err) {
                         error.OutOfMemory => @panic("OOM"),
                         error.InvalidUtf8 => @panic("VULKAN_SDK invalid environment var name"),
@@ -180,6 +185,11 @@ pub fn build(b: *std.Build) !void {
                     };
                     artifact.addLibraryPath(.{ .path = vulkan_sdk });
                     t.linkLibrary(artifact);
+
+                    const fmt = b.dependency("fmt", .{});
+                    t.addIncludePath(.{
+                        .path = std.fs.path.join(b.allocator, &.{ fmt.builder.install_path, "include" }) catch @panic("OOM"),
+                    });
                 },
                 .DX => {
                     t.linkSystemLibrary("WinRT");
