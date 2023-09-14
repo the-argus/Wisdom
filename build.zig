@@ -60,6 +60,14 @@ const dx_headers = &[_][]const u8{
 };
 
 pub const Backend = enum { DX, Vulkan };
+pub const LogLevel = enum(u8) {
+    Debug = 0,
+    Trace = 1,
+    Info = 2,
+    Warn = 3,
+    Error = 4,
+    Critical = 5,
+};
 
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
@@ -72,6 +80,8 @@ pub fn build(b: *std.Build) !void {
     const wayland_support = b.option(bool, "wayland_support", "Whether to add wayland support. Defaults to true on linux, false otherwise.") orelse (target.getOsTag() == .linux);
     const force_vulkan = b.option(bool, "force_vulkan", "Whether to force the use of vulkan. Useful on Windows. Defaults to false.") orelse false;
     const windows_store = b.option(bool, "windows_store", "Whether to build for the windows store. Defaults to false.") orelse false;
+    const runtime_asserts = b.option(bool, "runtime_asserts", "Whether to make asserts at runtime. Defaults to true in debug mode, false otherwise.") orelse (mode == .Debug);
+    const log_level = b.option(LogLevel, "log_level", "The minimum log level to display.") orelse (if (mode == .Debug) LogLevel.Debug else LogLevel.Critical);
 
     const backend: Backend = block: {
         if (force_vulkan) {
@@ -109,23 +119,30 @@ pub fn build(b: *std.Build) !void {
         // this adds intellisense for any headers which are not present in the source of dependencies, but are built and installed
         flags.append(includePrefixFlag(b.allocator, b.install_prefix)) catch @panic("OOM");
 
+        const debug_int: i32 = if (mode == .Debug) 1 else 0;
+        const asserts_int: i32 = if (runtime_asserts) 1 else 0;
+        const vulkan_int: i32 = if (backend == .Vulkan) 1 else 0;
+        const dx12_int: i32 = if (backend == .DX) 1 else 0;
+
         flags.appendSlice(&.{
             "-std=c++20",
-            // "-DDEBUG_MODE=$<IF:$<CONFIG:Debug>,1,0>",
-            // "-DRUNTIME_ASSERTS=$<BOOL:${RUNTIME_ASSERTS}>",
-            // "-DWISDOMDX12=$<BOOL:${WISDOMDX12}>",
-            // "-DWISDOMVK=$<BOOL:${WISDOMVK}>",
+            std.fmt.allocPrint(b.allocator, "-DDEBUG_MODE={}", .{debug_int}) catch @panic("OOM"),
+            std.fmt.allocPrint(b.allocator, "-DRUNTIME_ASSERTS={}", .{asserts_int}) catch @panic("OOM"),
+            std.fmt.allocPrint(b.allocator, "-DWISDOM_LOG_LEVEL={}", .{@intFromEnum(log_level)}) catch @panic("OOM"),
+            std.fmt.allocPrint(b.allocator, "-DWISDOMVK={}", .{vulkan_int}) catch @panic("OOM"),
+            std.fmt.allocPrint(b.allocator, "-DWISDOMDX12={}", .{dx12_int}) catch @panic("OOM"),
             // "-DWISDOMMTL=$<BOOL:${WISDOMMTL}>",
             // "-DWISDOM_VERSION=${WISDOM_VERSION}",
-            // "-DWISDOM_LOG_LEVEL=${SEV_INDEX}",
             "-DNOMINMAX",
         }) catch @panic("OOM");
 
         // header only defines
         if (header_only) {
             flags.appendSlice(&.{
-                "-DWISDOM_HEADER_ONLY", "WIS_INLINE=inline",
+                "-DWISDOM_HEADER_ONLY", "-DWIS_INLINE=inline",
             }) catch @panic("OOM");
+        } else {
+            flags.appendSlice(&.{"-DWIS_INLINE="}) catch @panic("OOM");
         }
 
         // the only time this is "export" is when we're doing modules which uh.
