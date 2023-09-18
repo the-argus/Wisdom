@@ -190,24 +190,38 @@ pub fn build(b: *std.Build) !void {
             // link libraries from build.zig.zon
             switch (backend) {
                 .Vulkan => {
+                    // vulkan memory allocator
                     const vma = b.dependency("vulkan_memory_allocator", .{
                         .target = target,
                         .optimize = mode,
                     });
-                    var artifact = vma.artifact("VulkanMemoryAllocator");
+                    // add vma headers
+                    t.step.dependOn(vma.builder.getInstallStep());
+                    t.addIncludePath(.{ .path = std.fs.path.join(
+                        b.allocator,
+                        &.{ vma.builder.install_path, "include" },
+                    ) catch @panic("OOM") });
+
+                    // add vma static lib
+                    var vma_lib = vma.artifact("VulkanMemoryAllocator");
+                    t.linkLibrary(vma_lib);
+
+                    // add the VULKAN_SDK to the library search path for VMA
                     const vulkan_sdk = std.process.getEnvVarOwned(b.allocator, "VULKAN_SDK") catch |err| switch (err) {
                         error.OutOfMemory => @panic("OOM"),
                         error.InvalidUtf8 => @panic("VULKAN_SDK invalid environment var name"),
                         error.EnvironmentVariableNotFound => @panic("You have no set the VULKAN_SDK environment variable- usually this means you haven't installed it."),
                     };
-                    artifact.addLibraryPath(.{ .path = vulkan_sdk });
-                    t.linkLibrary(artifact);
+                    vma_lib.addLibraryPath(.{ .path = vulkan_sdk });
 
+                    // fmt
                     const fmt = b.dependency("fmt", .{});
+                    t.step.dependOn(fmt.builder.getInstallStep());
                     t.addIncludePath(.{
                         .path = std.fs.path.join(b.allocator, &.{ fmt.builder.install_path, "include" }) catch @panic("OOM"),
                     });
 
+                    // link system libraries
                     switch (target.getOsTag()) {
                         .linux => {
                             t.linkSystemLibrary("xcb");

@@ -8,8 +8,8 @@
             .hash = "1220ad678342c3191edebd10df1a883b7a71e245d4ee91da26b7cf6b30e4ee8fb78d",
         },
         .vulkan_memory_allocator = .{
-            .url = "https://github.com/the-argus/VulkanMemoryAllocator/archive/c29cc46c4e7041f47e9a57685f2b56a6f22be756.tar.gz",
-            .hash = "1220fb00b9ca97760960efec09b980e38bba5a8dddcb5525143b1032734769152512",
+            .url = "https://github.com/the-argus/VulkanMemoryAllocator/archive/ead8017e68aaccdc9ae03f8e0b579776b363eef2.tar.gz",
+            .hash = "1220e1f0e245a585aaa5f2ba6e88b3479e3f3bb882cb95b32098e829533fa85e463f",
         },
         .fmt = .{
             .url = "https://github.com/the-argus/fmt/archive/6943e150b4c9fe5b033203dabbc60668e6122a2c.tar.gz",
