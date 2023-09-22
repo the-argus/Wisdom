@@ -36,12 +36,17 @@ pub fn build(b: *std.Build) !void {
     if (wisdom.static_lib) |lib| {
         std.debug.assert(!header_only);
         b.installArtifact(lib);
+
+        var targets = std.ArrayList(*std.Build.CompileStep).init(b.allocator);
         if (build_examples) {
-            @import("examples/build.zig").build(b, lib);
+            const examples = @import("examples/build.zig").build(b, lib);
+            targets.appendSlice(examples) catch @panic("OOM");
+            for (examples) |example| {
+                b.installArtifact(example);
+            }
         }
 
         // compile commands step
-        var targets = std.ArrayList(*std.Build.CompileStep).init(b.allocator);
         targets.append(wisdom.static_lib.?) catch @panic("OOM");
         zcc.createStep(b, "cdb", try targets.toOwnedSlice());
     } else {

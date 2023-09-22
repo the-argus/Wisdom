@@ -3,7 +3,8 @@ const std = @import("std");
 const dir = "examples/hello-triangle-kdgui/";
 
 /// Build examples (inherits targets and optimize from wisdom)
-pub fn build(b: *std.Build, wisdom: *std.Build.Step.Compile) void {
+pub fn build(b: *std.Build, wisdom: *std.Build.Step.Compile) []*std.Build.Step.Compile {
+    var targets = std.ArrayList(*std.Build.Step.Compile).init(b.allocator);
     // hello_triangle_kdgui
     {
         const hello_triangle_kdgui = b.addExecutable(.{
@@ -32,6 +33,8 @@ pub fn build(b: *std.Build, wisdom: *std.Build.Step.Compile) void {
             dir ++ "window.cpp",
         }, flags.toOwnedSlice() catch @panic("OOM"));
 
-        b.installArtifact(hello_triangle_kdgui);
+        targets.append(hello_triangle_kdgui) catch @panic("OOM");
     }
+
+    return targets.toOwnedSlice() catch @panic("OOM");
 }
