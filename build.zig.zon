@@ -15,5 +15,9 @@
             .url = "https://github.com/the-argus/fmt/archive/6943e150b4c9fe5b033203dabbc60668e6122a2c.tar.gz",
             .hash = "122014221f044a21045103dec0254a60c8edd3c3e3cef3fed359ca072ce0cf05252a",
         },
+        .glm = .{
+            .url = "https://github.com/the-argus/glm/archive/91fa7a2557cdba434c7ba2239b27aff69bc1969f.tar.gz",
+            .hash = "122017bc5e3e273118a888b5e519fc31c6ebd71ee4fc667daeed18663aded87def24",
+        },
     }
 }
