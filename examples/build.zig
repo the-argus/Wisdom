@@ -3,7 +3,11 @@ const std = @import("std");
 const dir = "examples/hello-triangle-kdgui/";
 
 /// Build examples (inherits targets and optimize from wisdom)
-pub fn build(b: *std.Build, wisdom: *std.Build.Step.Compile) []*std.Build.Step.Compile {
+pub fn build(
+    b: *std.Build,
+    wisdom: *std.Build.Step.Compile,
+    flags: []const []const u8,
+) []*std.Build.Step.Compile {
     var targets = std.ArrayList(*std.Build.Step.Compile).init(b.allocator);
     // hello_triangle_kdgui
     {
@@ -17,8 +21,19 @@ pub fn build(b: *std.Build, wisdom: *std.Build.Step.Compile) []*std.Build.Step.C
         hello_triangle_kdgui.linkLibCpp();
         hello_triangle_kdgui.linkLibrary(wisdom);
 
-        var flags = std.ArrayList([]const u8).init(b.allocator);
-        flags.append("-std=c++20") catch @panic("OOM");
+        // TODO: avoid having to do this...
+        for (wisdom.include_dirs.items) |include| {
+            switch (include) {
+                .path => |lazypath| {
+                    hello_triangle_kdgui.addIncludePath(.{ .path = lazypath.path });
+                },
+                else => {},
+            }
+        }
+
+        var local_flags = std.ArrayList([]const u8).init(b.allocator);
+        local_flags.append("-std=c++20") catch @panic("OOM");
+        local_flags.appendSlice(flags) catch @panic("OOM");
 
         switch (wisdom.target.getOsTag()) {
             .linux => {
@@ -31,7 +46,7 @@ pub fn build(b: *std.Build, wisdom: *std.Build.Step.Compile) []*std.Build.Step.C
             dir ++ "app.cpp",
             dir ++ "entry_main.cpp",
             dir ++ "window.cpp",
-        }, flags.toOwnedSlice() catch @panic("OOM"));
+        }, local_flags.toOwnedSlice() catch @panic("OOM"));
 
         targets.append(hello_triangle_kdgui) catch @panic("OOM");
     }
