@@ -218,6 +218,8 @@ pub fn buildWisdom(b: *std.Build, config: WisdomConfiguration) WisdomBuildResour
             lib.addIncludePath(.{ .path = "wisdom/include" });
 
             linkWisdomStep(b, lib, config.backend);
+
+            result.static_lib = lib;
         },
 
         .HeaderOnly => {
