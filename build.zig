@@ -136,6 +136,13 @@ pub fn build(b: *std.Build) !void {
             "-DNOMINMAX",
         }) catch @panic("OOM");
 
+        if (backend == .Vulkan) {
+            flags.appendSlice(&.{
+                "-DVULKAN_HPP_NO_EXCEPTIONS",
+                "-DWISDOM_VULKAN_FOUND",
+            }) catch @panic("OOM");
+        }
+
         // header only defines
         if (header_only) {
             flags.appendSlice(&.{
