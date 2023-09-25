@@ -28,6 +28,8 @@
         packages = with pkgs; [
           zig_0_11
           xorg.libxcb
+          wayland
+          libxkbcommon
           vulkan-sdk
         ];
         shellHook = ''

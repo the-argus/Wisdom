@@ -40,8 +40,8 @@ pub fn build(b: *std.Build) !void {
         var targets = std.ArrayList(*std.Build.CompileStep).init(b.allocator);
         if (build_examples) {
             const examples = @import("examples/build.zig").build(b, lib, wisdom.flags);
-            targets.appendSlice(examples) catch @panic("OOM");
             for (examples) |example| {
+                targets.append(example) catch @panic("OOM");
                 b.installArtifact(example);
             }
         }
