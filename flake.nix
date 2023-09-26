@@ -31,6 +31,7 @@
           wayland
           libxkbcommon
           vulkan-sdk
+          directx-shader-compiler
         ];
         shellHook = ''
           export VULKAN_SDK="${vulkan-sdk}"

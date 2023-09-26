@@ -1,6 +1,13 @@
+/// TODO: this is way more complicated than it needs to be because it finds files
+/// procedurally. Would be better to just list the shaders you want compiled here
 const std = @import("std");
 
 const here = "examples/shaders/";
+
+// directories by full name which should be ignored
+const ignore_dirs = &[_][]const u8{
+    "zig-cache",
+};
 
 const Shaders = struct {
     vs: std.ArrayList([]const u8),
@@ -40,9 +47,7 @@ pub fn build(b: *std.Build, debug: bool, windows_store: bool, win32: bool) Shade
     const files = getShaderFiles(b.allocator);
     inline for (@typeInfo(@TypeOf(files)).Struct.fields) |field| {
         for (@field(files, field.name).items) |shader| {
-
-            // call stem twice to get rid of both .ps and .hlsl
-            const stem = std.fs.path.stem(std.fs.path.stem(shader));
+            const stem = std.fs.path.stem(shader);
             std.log.debug("got shader stem of {s} to be {s}", .{ shader, stem });
 
             const version = std.fmt.allocPrint(b.allocator, "-T{s}_6_1", .{field.name}) catch @panic("OOM");
@@ -100,24 +105,51 @@ fn getShaderFiles(ally: std.mem.Allocator) Shaders {
             std.log.err("failed to walk directory: {any}", .{err});
             @panic("Directory traversal error. Maybe the nested directories go too deep?");
         };
-        while (walker_entry) |entry| {
+
+        walk: while (walker_entry) |entry| {
             defer walker_entry = (walker.next() catch |err| {
                 std.log.err("failed to walk directory: {any}", .{err});
                 @panic("Directory traversal error. Maybe the nested directories go too deep?");
             });
 
+            // determine if entry contains an ignored directory name
+            var subslice = entry.path;
+            while (subslice.len > 0) {
+                for (ignore_dirs) |pattern| {
+                    if (std.mem.eql(u8, subslice, pattern)) {
+                        continue :walk;
+                    }
+                }
+                subslice = std.fs.path.dirname(subslice) orelse break;
+            }
+
             const ext = std.fs.path.extension(entry.basename);
             if (!std.mem.eql(u8, ext, ".hlsl")) {
-                std.log.debug("file {s} has extension {s}, which is not .hlsl", .{ entry.path, ext });
                 continue;
             }
 
             // check if the extension *before* hlsl (for example something.ps.hlsl)
             // is one of the names of the fields of the shader struct.
-            const second_ext = std.fs.path.extension(std.fs.path.stem(entry.basename));
+            const second_ext = block: {
+                var secondary = std.fs.path.extension(std.fs.path.stem(entry.basename));
+                if (secondary.len > 0) {
+                    break :block secondary[1..];
+                }
+                std.log.warn(
+                    "no secondary file extension found on file {s}, skipping. consider categorizing with .ps.hlsl or .hs.hlsl, etc.",
+                    .{entry.basename},
+                );
+                continue;
+            };
+
             inline for (@typeInfo(@TypeOf(result)).Struct.fields) |field| {
                 if (std.mem.eql(u8, field.name, second_ext)) {
-                    @field(result, field.name).append(entry.path) catch @panic("OOM");
+                    var buffer: [1000]u8 = undefined;
+                    const fullpath = std.fs.path.join(ally, &.{ (std.fs.cwd().realpath(".", &buffer) catch @panic("no realpath found")), here, entry.path }) catch @panic(
+                        "OOM",
+                    );
+                    @field(result, field.name).append(fullpath) catch @panic("OOM");
+                    continue :walk;
                 }
             }
 
@@ -125,6 +157,11 @@ fn getShaderFiles(ally: std.mem.Allocator) Shaders {
                 "hlsl file {s} has inner extension {s}, which is not one of the accepted shader types. skipping.",
                 .{ entry.path, second_ext },
             );
+        }
+    }
+    inline for (@typeInfo(@TypeOf(result)).Struct.fields) |field| {
+        for (@field(result, field.name).items) |shader_path| {
+            std.log.debug("shader in field {s} at {s}", .{ field.name, shader_path });
         }
     }
     return result;
