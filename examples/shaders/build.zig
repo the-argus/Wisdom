@@ -41,7 +41,15 @@ pub fn build(b: *std.Build, debug: bool, windows_store: bool, win32: bool) Shade
         @panic("no cache root set for builder, unable to give dxc/shader compilation a cache directory");
     }
     const shader_output_folder = std.fs.path.join(b.allocator, &.{ b.cache_root.path.?, "wisdom_shaders" }) catch @panic("OOM");
-    defer b.allocator.free(shader_output_folder);
+    std.fs.makeDirAbsolute(shader_output_folder) catch |err| {
+        switch (err) {
+            error.PathAlreadyExists => {},
+            else => {
+                std.log.err("Failed to created inteded shader cache at {s} due to {any}", .{ shader_output_folder, err });
+                @panic("failed to create shader cache directory");
+            },
+        }
+    };
     defer shader_compilations.deinit();
 
     const files = getShaderFiles(b.allocator);
@@ -51,7 +59,7 @@ pub fn build(b: *std.Build, debug: bool, windows_store: bool, win32: bool) Shade
             std.log.debug("got shader stem of {s} to be {s}", .{ shader, stem });
 
             const version = std.fmt.allocPrint(b.allocator, "-T{s}_6_1", .{field.name}) catch @panic("OOM");
-            const output_flag = std.fmt.allocPrint(b.allocator, "-Fo${s}/{s}.spv", .{ shader_output_folder, stem }) catch @panic("OOM");
+            const output_flag = std.fmt.allocPrint(b.allocator, "-Fo{s}/{s}.spv", .{ shader_output_folder, stem }) catch @panic("OOM");
             defer b.allocator.free(version);
             defer b.allocator.free(output_flag);
 

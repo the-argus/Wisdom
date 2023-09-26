@@ -20,8 +20,8 @@
             .hash = "122017bc5e3e273118a888b5e519fc31c6ebd71ee4fc667daeed18663aded87def24",
         },
         .kdutils = .{
-            .url = "https://github.com/the-argus/kdutils/archive/36b61beb9fa18278bf093bf0bea397162081c6f3.tar.gz",
-            .hash = "1220a50ef40eec47098c04a4aea53c6d7f4026fe91ebd9bf30b577da22624527062d",
+            .url = "https://github.com/the-argus/kdutils/archive/79769788d9e0f404b3e292788f516b1b352a7cf2.tar.gz",
+            .hash = "12200e06842a43f2a46ae7f785ebb06f0535856c4a60d1174f2a3292dde9bf21d2f6",
         },
     }
 }
