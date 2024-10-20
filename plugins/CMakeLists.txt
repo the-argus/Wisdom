@@ -59,6 +59,7 @@ else()
 endif()
 
 add_subdirectory("DXC")
+add_subdirectory("Slang")
 
 set(PLUGINS_LOADED
     TRUE
