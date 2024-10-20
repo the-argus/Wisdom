@@ -83,8 +83,14 @@ function(wis_compile_shader)
     set(multiValueArgs INCLUDE_DIRS DEFINITIONS)
     cmake_parse_arguments(wis_compile_shader "${options}" "${oneValueArgs}"
                           "${multiValueArgs}" ${ARGN} )
+    set(useSlang, wis_compile_shader_SHADER MATCHES ".*\\.slang")
 
-	if(NOT dxc_EXECUTABLE)
+    if (useSlang AND NOT slangc_EXECUTABLE)
+        message(FATAL_ERROR, "wis_compile_shader: slangc not found")
+    endif()
+
+    # slang compiles to hlsl when using dx target
+    if((NOT useSlang OR WISDOM_DX12) AND NOT dxc_EXECUTABLE)
 		message(FATAL_ERROR "wis_compile_shader: dxc not found")
 	endif()
 
@@ -164,19 +170,29 @@ function(wis_compile_shader)
         set_property(SOURCE ${OUTPUT_DXIL} PROPERTY VS_DEPLOYMENT_CONTENT 1)
     endif()
 
-    if(WISDOM_WINDOWS)
+    if (useSlang)
+        # TODO: compile to hlsl for dx target
         add_custom_command(TARGET ${TARGET}
-            COMMAND "${dxc_EXECUTABLE}" -E${ENTRY} -T${TYPE}_${SHADER_MODEL} -Zi $<IF:$<CONFIG:DEBUG>,-Od,-O3> -Wno-ignored-attributes ${INCLUDES} ${DEFINES} -Fo${OUTPUT_DXIL} -Fd${OUTPUT_PDB} ${SHADER}
+            COMMAND "${slangc_EXECUTABLE}" ${SHADER} -target spirv -o ${OUTPUT_SPV} -entry ${ENTRY}
             MAIN_DEPENDENCY ${SHADER}
-            COMMENT "HLSL ${SHADER}"
+            COMMENT "SPV ${SHADER}"
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            VERBATIM)
+    else()
+        if(WISDOM_WINDOWS)
+            add_custom_command(TARGET ${TARGET}
+                COMMAND "${dxc_EXECUTABLE}" -E${ENTRY} -T${TYPE}_${SHADER_MODEL} -Zi $<IF:$<CONFIG:DEBUG>,-Od,-O3> -Wno-ignored-attributes ${INCLUDES} ${DEFINES} -Fo${OUTPUT_DXIL} -Fd${OUTPUT_PDB} ${SHADER}
+                MAIN_DEPENDENCY ${SHADER}
+                COMMENT "HLSL ${SHADER}"
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                VERBATIM)
+        endif()
+
+        add_custom_command(TARGET ${TARGET}
+            COMMAND "${dxc_EXECUTABLE}" -E${ENTRY} -T${TYPE}_${SHADER_MODEL} -Zi $<IF:$<CONFIG:DEBUG>,-Od,-O3> -spirv -Wno-ignored-attributes -fspv-target-env=vulkan1.3 ${INCLUDES} ${DEFINES} -Fo${OUTPUT_SPV} ${SHADER}
+            MAIN_DEPENDENCY ${SHADER}
+            COMMENT "SPV ${SHADER}"
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             VERBATIM)
     endif()
-
-    add_custom_command(TARGET ${TARGET}
-        COMMAND "${dxc_EXECUTABLE}" -E${ENTRY} -T${TYPE}_${SHADER_MODEL} -Zi $<IF:$<CONFIG:DEBUG>,-Od,-O3> -spirv -Wno-ignored-attributes -fspv-target-env=vulkan1.3 ${INCLUDES} ${DEFINES} -Fo${OUTPUT_SPV} ${SHADER}
-        MAIN_DEPENDENCY ${SHADER}
-        COMMENT "SPV ${SHADER}"
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        VERBATIM)
 endfunction()
