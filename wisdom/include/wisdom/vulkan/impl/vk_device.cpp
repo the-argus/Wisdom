@@ -3,6 +3,7 @@
 #include <wisdom/vulkan/vk_device.h>
 
 #include <cassert>
+#include <cstring>
 #include <algorithm>
 #include <unordered_set>
 #include <unordered_map>
@@ -167,7 +168,7 @@ wis::ImplVKCreateDevice(wis::VKAdapter in_adapter, wis::VKDeviceExtension** exts
     if (!allocation)
         return wis::make_result<FUNC, "Failed to allocate memory for feature structures">(VkResult::VK_ERROR_OUT_OF_HOST_MEMORY);
 
-    memset(allocation.get_data(), 0, allocation_size);
+    std::memset(allocation.get_data(), 0, allocation_size);
 
     VkBaseInStructure* linked_struct = reinterpret_cast<VkBaseInStructure*>(&vulkan12_features);
     uint8_t* current = allocation.get_data();
@@ -219,7 +220,7 @@ wis::ImplVKCreateDevice(wis::VKAdapter in_adapter, wis::VKDeviceExtension** exts
     if (!allocation_props)
         return wis::make_result<FUNC, "Failed to allocate memory for property structures">(VkResult::VK_ERROR_OUT_OF_HOST_MEMORY);
 
-    memset(allocation_props.get_data(), 0, allocation_size);
+    std::memset(allocation_props.get_data(), 0, allocation_size);
 
     VkBaseInStructure* linked_prop = reinterpret_cast<VkBaseInStructure*>(&vulkan12_props);
     current = allocation_props.get_data();
