@@ -50,6 +50,7 @@ The later reconfigurations are not reloading the plugins for easy expansion of t
 - `WISDOM_RUNTIME_ASSERTS=ON` enable/disable runtime validation checks from compile time
 - `WISDOM_USE_SYSTEM_DXC=OFF` use system DXC compiler instead of the one provided with the library (default uses the one provided)
 - `WISDOM_USE_SYSTEM_SLANGC=OFF` use system slangc compiler instead of building from source (default builds from source)
+- `WISDOM_BUILD_SLANGC=OFF` Build slangc from source instead of fetching binary. Overriden by WISDOM_USE_SYSTEM_SLANGC, if enabled
 - `WISDOM_FORCE_VULKAN=OFF` if set `ON` forces base types to be Vulkan, useful for debugging Vulkan extensions
 - `WISDOM_BUILD_EXAMPLES=ON` enable/disable example compilation
 - `WISDOM_BUILD_TESTS=ON` enable/disable test compilation

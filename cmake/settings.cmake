@@ -52,6 +52,7 @@ option(WISDOM_GENERATE_FUNCTIONS "Build shared library for C bindings" ${WDEBUG}
 option(WISDOM_GENERATE_API "Generate the API" ${GEN})
 option(WISDOM_USE_SYSTEM_DXC "Use dxc from PATH" OFF)
 option(WISDOM_USE_SYSTEM_SLANGC "Use slangc from PATH" OFF)
+option(WISDOM_BUILD_SLANGC "Build slangc from source. Overriden by WISDOM_USE_SYSTEM_SLANGC" OFF)
 
 if(WISDOM_FORCE_VULKAN)
   message("[Wisdom] Forcing vulkan as default device")
