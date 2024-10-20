@@ -33,6 +33,8 @@
           directx-shader-compiler
           cmake
           gnumake
+          gdb
+          valgrind
           (writeScriptBin "conf" ''cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -DWISDOM_USE_SYSTEM_DXC=ON'')
           (writeScriptBin "build" ''cmake --build build --parallel'')
         ];
